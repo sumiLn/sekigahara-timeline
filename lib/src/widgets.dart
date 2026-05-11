@@ -30,6 +30,45 @@ class HeaderBar extends StatelessWidget {
   }
 }
 
+
+class MobileHeaderBar extends StatelessWidget {
+  const MobileHeaderBar({super.key, required this.mode, required this.currentTime, required this.primaryEvent, required this.onSwitchMode});
+  final MapMode mode;
+  final DateTime currentTime;
+  final CampaignEvent? primaryEvent;
+  final VoidCallback onSwitchMode;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 7),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(colors: [Color(0xFF2C2117), Color(0xFF15100B)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+        border: Border(bottom: BorderSide(color: Color(0xFF8C6A3E))),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+              const Text('関ヶ原戦役', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFFF3E5BF))),
+              const SizedBox(height: 2),
+              Text(_formatEraDate(currentTime, mode), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFFE7D3A6))),
+              if (primaryEvent != null)
+                Text(primaryEvent!.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Color(0xFFCDBB92))),
+            ]),
+          ),
+          const SizedBox(width: 8),
+          FilledButton.tonal(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 34), padding: const EdgeInsets.symmetric(horizontal: 10)),
+            onPressed: onSwitchMode,
+            child: Text(mode == MapMode.campaign ? '本戦' : '全国', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class MapPanel extends StatefulWidget {
   const MapPanel({
     super.key,
@@ -177,8 +216,11 @@ class _MapPanelState extends State<MapPanel> {
                   ),
                 ),
               ),
-              Positioned(top: 14, left: 14, child: BattleCutInCard(event: widget.primaryEvent, animation: widget.cutInValue)),
-              Positioned(right: 12, top: 12, child: SmallMapButton(icon: Icons.center_focus_strong, label: '全体', onTap: () => widget.onFitRequest(viewport))),
+              if (viewport.width < 620)
+                Positioned(top: 10, left: 10, right: 58, child: BattleCutInCard(event: widget.primaryEvent, animation: widget.cutInValue))
+              else
+                Positioned(top: 14, left: 14, child: BattleCutInCard(event: widget.primaryEvent, animation: widget.cutInValue)),
+              Positioned(right: 10, top: 10, child: SmallMapButton(icon: Icons.center_focus_strong, label: '全体', onTap: () => widget.onFitRequest(viewport))),
             ],
           ),
         ),
@@ -244,17 +286,18 @@ class BattleCutInCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (event == null) return const SizedBox.shrink();
+    final isMobile = MediaQuery.of(context).size.width < 620;
     return AnimatedBuilder(
       animation: animation,
       builder: (context, _) {
         final p = Curves.easeOutCubic.transform(animation.value.clamp(0.0, 1.0));
         return Transform.translate(
-          offset: Offset(-28 * (1 - p), 0),
+          offset: Offset(-20 * (1 - p), 0),
           child: Opacity(
             opacity: p,
             child: Container(
               constraints: const BoxConstraints(maxWidth: 430),
-              padding: const EdgeInsets.fromLTRB(16, 13, 16, 13),
+              padding: EdgeInsets.fromLTRB(isMobile ? 10 : 16, isMobile ? 9 : 13, isMobile ? 10 : 16, isMobile ? 9 : 13),
               decoration: BoxDecoration(
                 color: const Color(0xE6E8D3A4),
                 borderRadius: BorderRadius.circular(16),
@@ -271,7 +314,7 @@ class BattleCutInCard extends StatelessWidget {
                       child: Text(event!.status, style: const TextStyle(color: Color(0xFFFFE9B0), fontSize: 11, fontWeight: FontWeight.w800)),
                     ),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(event!.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900))),
+                    Expanded(child: Text(event!.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: isMobile ? 14 : 21, fontWeight: FontWeight.w900))),
                   ]),
                   const SizedBox(height: 8),
                   _line('場所', event!.location),
@@ -377,26 +420,154 @@ class ArmyColumn extends StatelessWidget {
 }
 
 class SelectedInfoBar extends StatelessWidget {
-  const SelectedInfoBar({super.key, required this.unit, required this.currentTime});
+  const SelectedInfoBar({super.key, required this.unit, required this.currentTime, this.compact = false});
   final ArmyUnit? unit;
   final DateTime currentTime;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     if (unit == null) return const SizedBox.shrink();
     final f = unit!.stateAt(currentTime);
     return Container(
-      margin: const EdgeInsets.fromLTRB(10, 0, 10, 6),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      margin: EdgeInsets.fromLTRB(compact ? 8 : 10, 0, compact ? 8 : 10, compact ? 4 : 6),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 14, vertical: compact ? 7 : 8),
       decoration: BoxDecoration(color: const Color(0xDD221912), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0x668C6A3E))),
       child: Row(children: [
         Text(unit!.name, style: const TextStyle(color: Color(0xFFFFE5A8), fontWeight: FontWeight.w900)),
         const SizedBox(width: 12),
-        Expanded(child: Text('${f.place} / ${_actionText(f.action)}：${f.note}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFD8C49A), fontSize: 12))),
+        Expanded(child: Text('${f.place} / ${_actionText(f.action)}：${f.note}', maxLines: compact ? 2 : 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: const Color(0xFFD8C49A), fontSize: compact ? 11 : 12))),
       ]),
     );
   }
 }
+
+
+class FloatingArmyButton extends StatelessWidget {
+  const FloatingArmyButton({super.key, required this.title, required this.side, required this.count, required this.onTap});
+  final String title;
+  final Side side;
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final sideColor = side == Side.east ? const Color(0xFF2F68BD) : const Color(0xFFB83232);
+    return Material(
+      color: sideColor.withOpacity(0.92),
+      elevation: 8,
+      shadowColor: const Color(0x88000000),
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Text(title, style: const TextStyle(color: Color(0xFFFFF0C0), fontWeight: FontWeight.w900, fontSize: 13)),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(color: const Color(0x33000000), borderRadius: BorderRadius.circular(999)),
+              child: Text('$count', style: const TextStyle(color: Color(0xFFFFF0C0), fontSize: 11, fontWeight: FontWeight.w800)),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class ArmyBottomSheetContent extends StatelessWidget {
+  const ArmyBottomSheetContent({
+    super.key,
+    required this.title,
+    required this.side,
+    required this.units,
+    required this.currentTime,
+    required this.selectedUnitId,
+    required this.onTap,
+  });
+
+  final String title;
+  final Side side;
+  final List<ArmyUnit> units;
+  final DateTime currentTime;
+  final String? selectedUnitId;
+  final ValueChanged<String> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final sideColor = side == Side.east ? const Color(0xFF2F68BD) : const Color(0xFFB83232);
+    return SafeArea(
+      top: false,
+      child: Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.72),
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Row(children: [
+            Container(width: 8, height: 24, decoration: BoxDecoration(color: sideColor, borderRadius: BorderRadius.circular(99))),
+            const SizedBox(width: 8),
+            Expanded(child: Text('$title 部隊一覧', style: const TextStyle(color: Color(0xFFF5E5BD), fontSize: 18, fontWeight: FontWeight.w900))),
+            Text('${units.length}隊', style: const TextStyle(color: Color(0xFFCDBB92), fontSize: 12, fontWeight: FontWeight.w800)),
+          ]),
+          const SizedBox(height: 10),
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: units.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 7),
+              itemBuilder: (context, i) {
+                final u = units[i];
+                final f = u.stateAt(currentTime);
+                final selected = u.id == selectedUnitId;
+                return InkWell(
+                  onTap: () => onTap(u.id),
+                  borderRadius: BorderRadius.circular(13),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: selected ? const Color(0x332D8CFF) : const Color(0x33110D09),
+                      borderRadius: BorderRadius.circular(13),
+                      border: Border.all(color: selected ? const Color(0xFFEDC866) : const Color(0x338C6A3E)),
+                    ),
+                    child: Row(children: [
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(u.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFF4E1B5), fontWeight: FontWeight.w900, fontSize: 13.5)),
+                          const SizedBox(height: 2),
+                          Text('${f.place} / ${_actionText(f.action)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFCDBB92), fontSize: 11.5)),
+                        ]),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 72,
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                          Text('${f.troops}人', style: const TextStyle(color: Color(0xFFFFE5A8), fontSize: 11, fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 4),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(999),
+                            child: LinearProgressIndicator(
+                              minHeight: 5,
+                              value: u.initialTroops <= 0 ? 0 : (f.troops / u.initialTroops).clamp(0.0, 1.0),
+                              backgroundColor: const Color(0x553B2B1F),
+                              color: sideColor,
+                            ),
+                          ),
+                        ]),
+                      ),
+                    ]),
+                  ),
+                );
+              },
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
 
 class TimelineBar extends StatelessWidget {
   const TimelineBar({
@@ -459,6 +630,99 @@ class TimelineBar extends StatelessWidget {
         FilterChip(label: const Text('ラベル'), selected: showLabels, onSelected: (_) => onToggleLabels()),
         const SizedBox(width: 6),
         FilterChip(label: const Text('座標'), selected: showDebug, onSelected: (_) => onToggleDebug()),
+      ]),
+    );
+  }
+}
+
+
+class MobileTimelineBar extends StatelessWidget {
+  const MobileTimelineBar({
+    super.key,
+    required this.mode,
+    required this.start,
+    required this.end,
+    required this.current,
+    required this.playing,
+    required this.speed,
+    required this.showLabels,
+    required this.showDebug,
+    required this.onChanged,
+    required this.onTogglePlay,
+    required this.onSpeedChanged,
+    required this.onToggleLabels,
+    required this.onToggleDebug,
+  });
+
+  final MapMode mode;
+  final DateTime start;
+  final DateTime end;
+  final DateTime current;
+  final bool playing;
+  final double speed;
+  final bool showLabels;
+  final bool showDebug;
+  final ValueChanged<DateTime> onChanged;
+  final VoidCallback onTogglePlay;
+  final ValueChanged<double> onSpeedChanged;
+  final VoidCallback onToggleLabels;
+  final VoidCallback onToggleDebug;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = end.difference(start).inMinutes.toDouble();
+    final value = current.difference(start).inMinutes.toDouble().clamp(0.0, total);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 7, 10, 9),
+      decoration: const BoxDecoration(
+        color: Color(0xFF17110C),
+        border: Border(top: BorderSide(color: Color(0x443B2B1F))),
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Row(children: [
+          IconButton.filledTonal(
+            constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+            padding: EdgeInsets.zero,
+            onPressed: onTogglePlay,
+            icon: Icon(playing ? Icons.pause : Icons.play_arrow),
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: Text(_formatEraDate(current, mode), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFF0DDAE), fontWeight: FontWeight.w900, fontSize: 12))),
+          const SizedBox(width: 8),
+          DropdownButton<double>(
+            value: speed,
+            isDense: true,
+            dropdownColor: const Color(0xFF2A2118),
+            items: const [
+              DropdownMenuItem(value: 0.5, child: Text('0.5x')),
+              DropdownMenuItem(value: 1.0, child: Text('1x')),
+              DropdownMenuItem(value: 2.0, child: Text('2x')),
+              DropdownMenuItem(value: 4.0, child: Text('4x')),
+            ],
+            onChanged: (v) {
+              if (v != null) onSpeedChanged(v);
+            },
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            tooltip: 'ラベル',
+            visualDensity: VisualDensity.compact,
+            onPressed: onToggleLabels,
+            color: showLabels ? const Color(0xFFFFE0A0) : const Color(0xFF8A7B61),
+            icon: const Icon(Icons.label_outline, size: 20),
+          ),
+          IconButton(
+            tooltip: '座標',
+            visualDensity: VisualDensity.compact,
+            onPressed: onToggleDebug,
+            color: showDebug ? const Color(0xFFFFE0A0) : const Color(0xFF8A7B61),
+            icon: const Icon(Icons.my_location, size: 20),
+          ),
+        ]),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(trackHeight: 3, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7)),
+          child: Slider(min: 0, max: total, value: value, onChanged: (v) => onChanged(start.add(Duration(minutes: v.round())))),
+        ),
       ]),
     );
   }
