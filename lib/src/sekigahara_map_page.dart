@@ -6,8 +6,10 @@ class SekigaharaMapPage extends StatefulWidget {
   State<SekigaharaMapPage> createState() => _SekigaharaMapPageState();
 }
 
-class _SekigaharaMapPageState extends State<SekigaharaMapPage> with TickerProviderStateMixin {
-  final TransformationController _transformController = TransformationController();
+class _SekigaharaMapPageState extends State<SekigaharaMapPage>
+    with TickerProviderStateMixin {
+  final TransformationController _transformController =
+      TransformationController();
   late final AnimationController _effectController;
   late final AnimationController _cutInController;
   Timer? _timer;
@@ -24,14 +26,24 @@ class _SekigaharaMapPageState extends State<SekigaharaMapPage> with TickerProvid
   MapPoint? lastDebugPoint;
   String? lastCutInEventId;
 
-  DateTime get startTime => mode == MapMode.campaign ? SekigaharaData.campaignStart : SekigaharaData.battleStart;
-  DateTime get initialTime => mode == MapMode.campaign ? SekigaharaData.campaignInitial : SekigaharaData.battleInitial;
-  DateTime get endTime => mode == MapMode.campaign ? SekigaharaData.campaignEnd : SekigaharaData.battleEnd;
-  DateTime get currentTime => startTime.add(Duration(minutes: currentMinutes.round()));
-  Size get imageSize => mode == MapMode.campaign ? SekigaharaData.campaignImageSize : SekigaharaData.battleImageSize;
+  DateTime get startTime => mode == MapMode.campaign
+      ? SekigaharaData.campaignStart
+      : SekigaharaData.battleStart;
+  DateTime get initialTime => mode == MapMode.campaign
+      ? SekigaharaData.campaignInitial
+      : SekigaharaData.battleInitial;
+  DateTime get endTime => mode == MapMode.campaign
+      ? SekigaharaData.campaignEnd
+      : SekigaharaData.battleEnd;
+  DateTime get currentTime =>
+      startTime.add(Duration(minutes: currentMinutes.round()));
+  Size get imageSize => mode == MapMode.campaign
+      ? SekigaharaData.campaignImageSize
+      : SekigaharaData.battleImageSize;
 
   List<CampaignEvent> get visibleEvents {
-    if (mode == MapMode.sekigaharaBattle) return SekigaharaData.events.where((e) => e.battlePoint != null).toList();
+    if (mode == MapMode.sekigaharaBattle)
+      return SekigaharaData.events.where((e) => e.battlePoint != null).toList();
     return SekigaharaData.events;
   }
 
@@ -41,20 +53,38 @@ class _SekigaharaMapPageState extends State<SekigaharaMapPage> with TickerProvid
       active.sort((a, b) => b.start.compareTo(a.start));
       return active.first;
     }
-    final window = mode == MapMode.campaign ? const Duration(days: 2) : const Duration(minutes: 35);
-    final near = visibleEvents.where((e) => e.nearAt(currentTime, window)).toList();
+    final window = mode == MapMode.campaign
+        ? const Duration(days: 2)
+        : const Duration(minutes: 35);
+    final near = visibleEvents
+        .where((e) => e.nearAt(currentTime, window))
+        .toList();
     if (near.isEmpty) return null;
-    near.sort((a, b) => a.start.difference(currentTime).inSeconds.abs().compareTo(b.start.difference(currentTime).inSeconds.abs()));
+    near.sort(
+      (a, b) => a.start
+          .difference(currentTime)
+          .inSeconds
+          .abs()
+          .compareTo(b.start.difference(currentTime).inSeconds.abs()),
+    );
     return near.first;
   }
 
   @override
   void initState() {
     super.initState();
-    _effectController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1700))..repeat();
-    _cutInController = AnimationController(vsync: this, duration: const Duration(milliseconds: 650));
+    _effectController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1700),
+    )..repeat();
+    _cutInController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    );
     currentMinutes = initialTime.difference(startTime).inMinutes.toDouble();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _cutInController.forward(from: 0));
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _cutInController.forward(from: 0),
+    );
   }
 
   @override
@@ -67,8 +97,14 @@ class _SekigaharaMapPageState extends State<SekigaharaMapPage> with TickerProvid
   }
 
   void _setTime(DateTime time) {
-    final clamped = time.isBefore(startTime) ? startTime : time.isAfter(endTime) ? endTime : time;
-    setState(() => currentMinutes = clamped.difference(startTime).inMinutes.toDouble());
+    final clamped = time.isBefore(startTime)
+        ? startTime
+        : time.isAfter(endTime)
+        ? endTime
+        : time;
+    setState(
+      () => currentMinutes = clamped.difference(startTime).inMinutes.toDouble(),
+    );
   }
 
   void _togglePlay() {
@@ -92,14 +128,18 @@ class _SekigaharaMapPageState extends State<SekigaharaMapPage> with TickerProvid
     _timer?.cancel();
     setState(() {
       playing = false;
-      mode = mode == MapMode.campaign ? MapMode.sekigaharaBattle : MapMode.campaign;
+      mode = mode == MapMode.campaign
+          ? MapMode.sekigaharaBattle
+          : MapMode.campaign;
       hoveredUnitId = null;
       hoveredMarkerId = null;
       selectedUnitId = null;
       lastDebugPoint = null;
       currentMinutes = initialTime.difference(startTime).inMinutes.toDouble();
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) => _cutInController.forward(from: 0));
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _cutInController.forward(from: 0),
+    );
   }
 
   void _fitCamera(Size viewport) {
@@ -111,7 +151,9 @@ class _SekigaharaMapPageState extends State<SekigaharaMapPage> with TickerProvid
     final scale = math.max(fit, minScale);
     final dx = (viewport.width - imageSize.width * scale) / 2;
     final dy = (viewport.height - imageSize.height * scale) / 2;
-    _transformController.value = Matrix4.identity()..translate(dx, dy)..scale(scale);
+    _transformController.value = Matrix4.identity()
+      ..translate(dx, dy)
+      ..scale(scale);
   }
 
   void _showArmySheet(String title, Side side, List<ArmyUnit> units) {
@@ -161,20 +203,43 @@ class _SekigaharaMapPageState extends State<SekigaharaMapPage> with TickerProvid
     );
   }
 
-  Widget _buildDesktopLayout({required List<ArmyUnit> eastUnits, required List<ArmyUnit> westUnits, required ArmyUnit? selectedUnit}) {
+  Widget _buildDesktopLayout({
+    required List<ArmyUnit> eastUnits,
+    required List<ArmyUnit> westUnits,
+    required ArmyUnit? selectedUnit,
+  }) {
     return Column(
       children: [
-        HeaderBar(mode: mode, currentTime: currentTime, primaryEvent: primaryEvent, onSwitchMode: _switchMode),
+        HeaderBar(
+          mode: mode,
+          currentTime: currentTime,
+          primaryEvent: primaryEvent,
+          onSwitchMode: _switchMode,
+        ),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
             child: Row(
               children: [
-                ArmyColumn(title: '西軍', side: Side.west, units: westUnits, currentTime: currentTime, selectedUnitId: selectedUnitId, onTap: (id) => setState(() => selectedUnitId = id)),
+                ArmyColumn(
+                  title: '西軍',
+                  side: Side.west,
+                  units: westUnits,
+                  currentTime: currentTime,
+                  selectedUnitId: selectedUnitId,
+                  onTap: (id) => setState(() => selectedUnitId = id),
+                ),
                 const SizedBox(width: 8),
                 Expanded(child: _buildMapPanel()),
                 const SizedBox(width: 8),
-                ArmyColumn(title: '東軍', side: Side.east, units: eastUnits, currentTime: currentTime, selectedUnitId: selectedUnitId, onTap: (id) => setState(() => selectedUnitId = id)),
+                ArmyColumn(
+                  title: '東軍',
+                  side: Side.east,
+                  units: eastUnits,
+                  currentTime: currentTime,
+                  selectedUnitId: selectedUnitId,
+                  onTap: (id) => setState(() => selectedUnitId = id),
+                ),
               ],
             ),
           ),
@@ -199,19 +264,39 @@ class _SekigaharaMapPageState extends State<SekigaharaMapPage> with TickerProvid
     );
   }
 
-  Widget _buildMobileLayout({required List<ArmyUnit> eastUnits, required List<ArmyUnit> westUnits, required ArmyUnit? selectedUnit}) {
+  Widget _buildMobileLayout({
+    required List<ArmyUnit> eastUnits,
+    required List<ArmyUnit> westUnits,
+    required ArmyUnit? selectedUnit,
+  }) {
+    final bottomOffset = selectedUnit == null ? 112.0 : 156.0;
+
     return Stack(
       children: [
         Column(
           children: [
-            MobileHeaderBar(mode: mode, currentTime: currentTime, primaryEvent: primaryEvent, onSwitchMode: _switchMode),
+            MobileHeaderBar(
+              mode: mode,
+              currentTime: currentTime,
+              primaryEvent: primaryEvent,
+              onSwitchMode: _switchMode,
+            ),
+
+            // スマホでは地図を常に最優先で表示する
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
                 child: _buildMapPanel(),
               ),
             ),
-            SelectedInfoBar(unit: selectedUnit, currentTime: currentTime, compact: true),
+
+            // 選択中の部隊情報だけ、必要なときに短く表示
+            SelectedInfoBar(
+              unit: selectedUnit,
+              currentTime: currentTime,
+              compact: true,
+            ),
+
             MobileTimelineBar(
               mode: mode,
               start: startTime,
@@ -229,9 +314,11 @@ class _SekigaharaMapPageState extends State<SekigaharaMapPage> with TickerProvid
             ),
           ],
         ),
+
+        // 西軍リストは常時表示しない。ボタンから下部シートで開く。
         Positioned(
           left: 12,
-          bottom: selectedUnit == null ? 112 : 152,
+          bottom: bottomOffset,
           child: FloatingArmyButton(
             title: '西軍',
             side: Side.west,
@@ -239,9 +326,11 @@ class _SekigaharaMapPageState extends State<SekigaharaMapPage> with TickerProvid
             onTap: () => _showArmySheet('西軍', Side.west, westUnits),
           ),
         ),
+
+        // 東軍リストも常時表示しない。ボタンから下部シートで開く。
         Positioned(
           right: 12,
-          bottom: selectedUnit == null ? 112 : 152,
+          bottom: bottomOffset,
           child: FloatingArmyButton(
             title: '東軍',
             side: Side.east,
@@ -261,18 +350,40 @@ class _SekigaharaMapPageState extends State<SekigaharaMapPage> with TickerProvid
       _cutInController.forward(from: 0);
     }
 
-    final selectedUnit = selectedUnitId == null ? null : SekigaharaData.units.where((u) => u.id == selectedUnitId).firstOrNull;
-    final eastUnits = SekigaharaData.units.where((u) => u.visibleAt(currentTime, mode) && u.stateAt(currentTime).side == Side.east).toList();
-    final westUnits = SekigaharaData.units.where((u) => u.visibleAt(currentTime, mode) && u.stateAt(currentTime).side == Side.west).toList();
+    final selectedUnit = selectedUnitId == null
+        ? null
+        : SekigaharaData.units.where((u) => u.id == selectedUnitId).firstOrNull;
+    final eastUnits = SekigaharaData.units
+        .where(
+          (u) =>
+              u.visibleAt(currentTime, mode) &&
+              u.stateAt(currentTime).side == Side.east,
+        )
+        .toList();
+    final westUnits = SekigaharaData.units
+        .where(
+          (u) =>
+              u.visibleAt(currentTime, mode) &&
+              u.stateAt(currentTime).side == Side.west,
+        )
+        .toList();
     final size = MediaQuery.of(context).size;
-    final isMobile = size.width < 760;
+    final isMobile = size.shortestSide < 700;
 
     return Scaffold(
       backgroundColor: const Color(0xFF1C1711),
       body: SafeArea(
         child: isMobile
-            ? _buildMobileLayout(eastUnits: eastUnits, westUnits: westUnits, selectedUnit: selectedUnit)
-            : _buildDesktopLayout(eastUnits: eastUnits, westUnits: westUnits, selectedUnit: selectedUnit),
+            ? _buildMobileLayout(
+                eastUnits: eastUnits,
+                westUnits: westUnits,
+                selectedUnit: selectedUnit,
+              )
+            : _buildDesktopLayout(
+                eastUnits: eastUnits,
+                westUnits: westUnits,
+                selectedUnit: selectedUnit,
+              ),
       ),
     );
   }
